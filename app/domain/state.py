@@ -9,7 +9,6 @@ no non-JSON-serializable values, since the checkpointer may need to
 
 from __future__ import annotations
 from typing import Literal, TypedDict
-from app.domain.constants import Dimension
 
 
 class QATurn(TypedDict):
@@ -35,13 +34,24 @@ class AssessmentState(TypedDict):
     session_id: str
     status: Literal["in_progress", "completed"]
 
-    current_dimension: Dimension
+    # Dimension.value (plain str, not the enum) — the checkpointer
+    # serializes state, and enums aren't a registered msgpack type.
+    current_dimension: str
     dimension_index: int
 
     # Q&A turns for the dimension currently being scored. Reset to []
     # each time we advance to the next dimension.
     current_dimension_turns: list[QATurn]
     followups_used: int
+
+    # Session-wide follow-up count, never reset (unlike followups_used
+    # above). Used by finalize's confidence heuristic.
+    total_followups_used: int
+
+    # Set by assess_sufficiency, read by the conditional edge that routes
+    # to ask_followup vs score_dimension.
+    last_sufficiency: bool
+    last_sufficiency_reason: str
 
     # Scored so far, keyed by Dimension.value; only present once scored.
     profile: dict[str, ScoredDimension]
@@ -58,3 +68,7 @@ class AssessmentState(TypedDict):
     # Full Q&A history across all dimensions, never reset. Used by
     # GET /v1/sessions/{id} to rehydrate the whole conversation for the UI.
     transcript: list[QATurn]
+
+    # Set by finalize; a heuristic derived from how many follow-ups were
+    # needed overall (see app/graph/nodes.py), not a calibrated probability.
+    confidence: float
