@@ -129,15 +129,36 @@ class AnthropicStructuredClient:
                     ),
                     timeout=settings.llm_timeout,
                 )
-            finally:
-                duration_ms = (time.monotonic() - start) * 1000
-                logger.info(
-                    "llm.call",
+            except Exception:
+                # Logged here (not just by the callers' except APIError
+                # blocks) so even a timeout or a non-retried error still
+                # leaves the full input and latency in the trace, not just
+                # an error string — the input is often what explains why a
+                # call failed (e.g. hit a token limit).
+                logger.warning(
+                    "llm.call_failed",
                     model=settings.model_name,
                     output_model=output_model.__name__,
-                    duration_ms=round(duration_ms, 1),
+                    duration_ms=round((time.monotonic() - start) * 1000, 1),
+                    system=system,
+                    user=user,
                 )
-            return _extract_tool_input(response, output_model.__name__)
+                raise
+
+            duration_ms = (time.monotonic() - start) * 1000
+            result = _extract_tool_input(response, output_model.__name__)
+            logger.info(
+                "llm.call",
+                model=settings.model_name,
+                output_model=output_model.__name__,
+                duration_ms=round(duration_ms, 1),
+                input_tokens=response.usage.input_tokens,
+                output_tokens=response.usage.output_tokens,
+                system=system,
+                user=user,
+                output=result,
+            )
+            return result
 
         return await _do_call()
 
