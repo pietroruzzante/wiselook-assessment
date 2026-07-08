@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
+import structlog
 from fastapi import APIRouter, Depends, HTTPException
 from langgraph.types import Command
 from pydantic import BaseModel, Field
@@ -83,6 +84,7 @@ def _completed_response(session_id: UUID, state: AssessmentState) -> AssessmentR
 @router.post("/sessions", response_model=SessionTurnResponse, response_model_exclude_none=True)
 async def create_session(graph: Any = Depends(get_graph)) -> SessionTurnResponse:
     session_id = uuid4()
+    structlog.contextvars.bind_contextvars(session_id=str(session_id))
     state = await graph.ainvoke(_initial_state(session_id), config=thread_config(session_id))
     return _in_progress_response(session_id, state)
 
@@ -95,6 +97,9 @@ async def create_session(graph: Any = Depends(get_graph)) -> SessionTurnResponse
 async def reply(
     session_id: UUID, body: ReplyRequest, graph: Any = Depends(get_graph)
 ) -> SessionTurnResponse | AssessmentResult:
+    # session_id is already bound to the log context by the request
+    # middleware, which parses it straight from the URL (see
+    # observability/logging.py for why that's done there, not here).
     config = thread_config(session_id)
     snapshot = await graph.aget_state(config)
     if not snapshot.values:
@@ -114,6 +119,8 @@ async def reply(
 async def get_session(
     session_id: UUID, graph: Any = Depends(get_graph)
 ) -> SessionTurnResponse | AssessmentResult:
+    # session_id is already bound to the log context by the request
+    # middleware (see the comment in reply(), above).
     config = thread_config(session_id)
     snapshot = await graph.aget_state(config)
     if not snapshot.values:
