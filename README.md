@@ -7,8 +7,7 @@ state machine and scored by an LLM with structured, validated output.
 This is the Wiselook AI Engineer technical assessment, built to **Option C**
 (the highest tier requested in the brief): the core conversational engine,
 plus an evaluation harness, observability, and a documented approach to
-concurrency and voice. The full build spec this was built against lives in
-[`CLAUDE.md`](./CLAUDE.md) — this README covers what actually got built, the
+concurrency and voice. This README covers what actually got built, the
 decisions behind it, and what I'd do next.
 
 ---
@@ -77,10 +76,10 @@ mypy .
 
 ## A note on the chat UI
 
-`static/index.html` was supplied by the brief as the "already built" piece
-(CLAUDE.md's repo structure lists it that way), and the assessment isn't
-being evaluated on frontend work — the backend, graph, evaluation, and
-observability are the point. That said, a few small changes went in beyond
+`static/index.html` was supplied by the brief as the "already built" piece,
+and the assessment isn't being evaluated on frontend work — the backend,
+graph, evaluation, and observability are the point. That said, a few small
+changes went in beyond
 what was strictly necessary, because they affect whether the UI is actually
 usable for testing the assessment, not because of frontend polish for its
 own sake:
@@ -393,11 +392,15 @@ range.
   extension (translate the question bank, and either translate answers
   before scoring or verify the scoring prompt generalizes) rather than an
   architectural change.
-- The follow-up question itself is deterministic, not a third LLM call —
-  it's built directly from `assess_sufficiency`'s `reason` field
-  ("Could you say more? Specifically: {reason}"). CLAUDE.md names exactly
-  two LLM roles, and templating the gap the sufficiency check already
-  identified avoids inventing a third one.
+- The follow-up question itself is deterministic, not a third LLM call — a
+  single generic template asking for more concrete detail, the same for
+  every dimension. Only two LLM roles exist (`assess_sufficiency` and
+  `score_dimension`); the template deliberately doesn't repeat
+  `assess_sufficiency`'s internal `reason` field back to the user — that
+  field names the trait and the model's read on the answer, and surfacing
+  it would break the blind assessment (a user could game later answers
+  once they know what's being measured). The reason is still logged for
+  traceability, just never shown in the chat.
 
 ---
 
