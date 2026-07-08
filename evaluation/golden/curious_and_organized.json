@@ -1,0 +1,17 @@
+{
+  "name": "curious_and_organized",
+  "answers": {
+    "openness": "I'd jump on that. I'd reply in the channel right away and volunteer to pilot it — even if it doesn't pan out, trying a genuinely different methodology for a sprint teaches us something our current process can't. I'd rather find out firsthand than guess from the sidelines.",
+    "conscientiousness": "First thing I'd do is list out exactly which of the three tasks block what, then split them across the remaining team based on who's closest to each piece already. I'd move our stand-up to daily for the two weeks, flag the risk to the client proactively instead of waiting for Friday to surprise them, and build in a buffer day before the deadline in case one handoff slips.",
+    "extraversion": "Honestly, more stand-up calls and syncs would drain me fast, especially stacked on top of what we already have. I'd push to keep it lean — I do my best work heads-down, and I'd rather send a tight written update than sit through another call that could've been a message.",
+    "agreeableness": "I'd hold my ground in the room — I'd ask her to walk through the specific case where her approach breaks down, since I don't think 'overly cautious' is a fair read of the trade-offs I laid out. If the group still leans her way by the end of the meeting, I'd say so plainly rather than pretend to agree.",
+    "neuroticism": "I'd stay level — first message back is 'on it, give me ten minutes,' then I actually spend those ten minutes finding the root cause instead of reacting. I'd loop in the colleague to fix it together rather than assign blame, get a patch out, and only then go back to my own deadline."
+  },
+  "expected_ranges": {
+    "openness": [4, 5],
+    "conscientiousness": [4, 5],
+    "extraversion": [1, 2],
+    "agreeableness": [1, 2],
+    "neuroticism": [1, 2]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "cautious_and_reactive",
+  "answers": {
+    "openness": "I'd wait and see. Two years of a working process is worth something, and 'no guarantee it's better' is exactly the problem — I wouldn't want to be the one whose deliverables slip while we're figuring out a brand-new methodology. I'd rather let someone else pilot it first and watch how it goes.",
+    "conscientiousness": "That's a lot to land on us with no extra time. Honestly I'm not sure where to start — I'd probably just pick up whatever seems most urgent in the moment and hope the rest gets covered, since there's no way to plan around a deadline that isn't moving.",
+    "extraversion": "I'd actually welcome that — more stand-ups and in-person syncs sound good to me, it's nice to actually talk things through with people instead of writing another status update. I'd rather be in the room than reading a doc.",
+    "agreeableness": "If a colleague pushed back that hard in front of the team, I'd probably back off and go along with their direction — it's not worth the tension of arguing it out in the room, and afterward I'd still feel bad about how it went even if I still had doubts.",
+    "neuroticism": "I'd feel pretty rattled getting that message in the middle of my own crunch — my stomach would drop and I'd probably spend the next while replaying what went wrong and worrying about how it looks to my manager before I could really focus on the fix."
+  },
+  "expected_ranges": {
+    "openness": [1, 2],
+    "conscientiousness": [1, 2],
+    "extraversion": [4, 5],
+    "agreeableness": [4, 5],
+    "neuroticism": [4, 5]
+  }
+}
