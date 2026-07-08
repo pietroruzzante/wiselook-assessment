@@ -19,7 +19,10 @@ decisions behind it, and what I'd do next.
   decides whether an answer is informative enough to score or needs a
   follow-up, scores it, and moves on — five dimensions, then done.
 - A **FastAPI** service (`/v1/sessions`, `/v1/sessions/{id}/reply`,
-  `/v1/sessions/{id}`) wrapping that graph, with a static chat UI.
+  `/v1/sessions/{id}`) wrapping that graph, with a static chat UI (see the
+  note below — this piece was provided by the brief, not something the
+  assessment is evaluated on, though it got a bit more polish than strictly
+  required).
 - An **evaluation harness** (`evaluation/`) that runs fixed conversations
   through the real model and checks both the schema *and* whether the
   scoring rationale is actually justified by what the person said.
@@ -69,6 +72,31 @@ python -m evaluation.run_eval
 ruff check .
 mypy .
 ```
+
+---
+
+## A note on the chat UI
+
+`static/index.html` was supplied by the brief as the "already built" piece
+(CLAUDE.md's repo structure lists it that way), and the assessment isn't
+being evaluated on frontend work — the backend, graph, evaluation, and
+observability are the point. That said, a few small changes went in beyond
+what was strictly necessary, because they affect whether the UI is actually
+usable for testing the assessment, not because of frontend polish for its
+own sake:
+
+- A landing screen with a single "Start Assessment" button, since the
+  chat previously auto-started a session (and burned an LLM call) the
+  moment the page loaded, before a user had decided to begin.
+- Removing a rationale leak in the follow-up question — it was echoing
+  the sufficiency verdict's internal reasoning (which trait, and why the
+  answer looked weak) straight into the chat, which breaks the "blind"
+  part of a blind personality assessment. This one is a correctness fix
+  more than UI polish; it happened to surface in the UI first.
+- Trimming the completion banner's copy.
+
+None of this changes the API contract or the graph; it's presentation-layer
+only, called out here so it doesn't read as in-scope deliverable work.
 
 ---
 
