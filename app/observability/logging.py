@@ -9,14 +9,18 @@ grepping one id, without threading it through every function call.
 
 from __future__ import annotations
 
+import contextvars
 import logging
 import re
 import time
 import uuid
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Iterator
+from contextlib import contextmanager
+from typing import Any
 
 import structlog
 from fastapi import Request, Response
+from structlog.types import EventDict
 
 from app.config import settings
 
@@ -25,6 +29,38 @@ logger = structlog.get_logger(__name__)
 # Matches the session_id path segment directly, since it's needed before
 # routing runs (see request_logging_middleware's docstring for why).
 _SESSION_PATH_RE = re.compile(r"^/v1/sessions/(?P<session_id>[0-9a-fA-F-]{36})")
+
+# Set only while inside a capture_logs() block; None the rest of the time,
+# in which case _capture_processor is a no-op and logging works as normal.
+_capture_sink: contextvars.ContextVar[list[dict[str, Any]] | None] = contextvars.ContextVar(
+    "_capture_sink", default=None
+)
+
+
+def _capture_processor(logger: Any, method_name: str, event_dict: EventDict) -> EventDict:
+    """Mirrors every log event into whatever list capture_logs() bound for
+    the current context, on top of the normal stdout JSON output."""
+    sink = _capture_sink.get()
+    if sink is not None:
+        sink.append(dict(event_dict))
+    return event_dict
+
+
+@contextmanager
+def capture_logs() -> Iterator[list[dict[str, Any]]]:
+    """Collects every log event emitted within this `with` block into a
+    list, for the caller to persist however it likes.
+
+    Used by evaluation/run_eval.py to save one JSON file of logs per
+    golden-transcript run, alongside the normal stdout output — nothing
+    about request-serving logging changes.
+    """
+    events: list[dict[str, Any]] = []
+    token = _capture_sink.set(events)
+    try:
+        yield events
+    finally:
+        _capture_sink.reset(token)
 
 
 def configure_logging() -> None:
@@ -38,6 +74,7 @@ def configure_logging() -> None:
             structlog.processors.TimeStamper(fmt="iso"),
             structlog.processors.StackInfoRenderer(),
             structlog.processors.format_exc_info,
+            _capture_processor,
             structlog.processors.JSONRenderer(),
         ],
         wrapper_class=structlog.make_filtering_bound_logger(level),
