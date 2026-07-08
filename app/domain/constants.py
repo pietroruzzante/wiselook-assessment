@@ -82,5 +82,14 @@ DIMENSION_DESCRIPTORS: dict[Dimension, tuple[str, str]] = {
     Dimension.CONSCIENTIOUSNESS: ("organized, disciplined", "flexible, spontaneous"),
     Dimension.EXTRAVERSION: ("sociable, energetic", "reserved, independent"),
     Dimension.AGREEABLENESS: ("cooperative, empathetic", "competitive, direct"),
-    Dimension.NEUROTICISM: ("sensitive, reactive", "stable, calm"),
+    # "reactive" here means emotionally volatile/easily rattled, not "quick
+    # to respond" — a fast, level-headed response to a crisis is low
+    # neuroticism, not high, and the rubric spells that out to avoid the
+    # scorer conflating the two senses of "react".
+    Dimension.NEUROTICISM: (
+        "emotionally reactive and easily rattled — worries, gets anxious, or "
+        "feels shaken by stress or setbacks, even if still functional",
+        "emotionally stable and even-keeled under stress — reacts quickly "
+        "and calmly to problems without feeling rattled or anxious",
+    ),
 }

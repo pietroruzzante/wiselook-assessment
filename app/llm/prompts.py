@@ -10,7 +10,7 @@ from __future__ import annotations
 from app.domain.constants import DIMENSION_DESCRIPTORS, Dimension, PRIMARY_QUESTIONS
 from app.domain.state import QATurn
 
-PROMPT_VERSION = "v3"
+PROMPT_VERSION = "v5"
 
 
 def format_transcript(turns: list[QATurn]) -> str:
@@ -99,6 +99,13 @@ Weigh concrete behavioral detail (what the person says they would actually
 do, say, or decide in the scenario, and in what order) far more heavily than
 self-labels or general claims about themselves — "I'm usually very
 organized" carries little weight on its own; a specific plan of action does.
+
+The score direction follows the rubric's high/low labels only — it is not a
+measure of how good, competent, or desirable the response sounds. Do not let
+a calm, capable-sounding answer pull the score upward by default: for
+neuroticism in particular, a calm and even-keeled reaction is the LOW end
+(near 1), while an anxious or easily-rattled reaction is the HIGH end (near
+5) — the opposite of what "this was a strong response" might suggest.
 
 Your rationale must be directly grounded in what the person actually said —
 quote or closely paraphrase specific details from their answer(s) — not a
