@@ -82,18 +82,28 @@ async def assess_sufficiency(state: AssessmentState) -> dict[str, Any]:
     }
 
 
-async def ask_followup(state: AssessmentState) -> dict[str, Any]:
-    """Deterministic follow-up: probes the gap assess_sufficiency identified.
+FOLLOWUP_QUESTION = (
+    "Could you walk me through that in more detail — specifically, what "
+    "would you actually say or do, step by step?"
+)
 
-    Not a third LLM role (CLAUDE.md section 7 names exactly two) — this
-    turns the sufficiency verdict's `reason` into a direct question.
+
+async def ask_followup(state: AssessmentState) -> dict[str, Any]:
+    """Deterministic follow-up (not a third LLM role — CLAUDE.md section 7
+    names exactly two) asking for more concrete detail.
+
+    Deliberately generic, not built from assess_sufficiency's `reason`:
+    that field explains the *scoring* judgment (e.g. "could reflect either
+    genuine curiosity (high openness) or impulsive enthusiasm") and must
+    stay internal — logged for traceability, never shown to the person
+    being assessed, or the assessment stops being blind.
     """
-    reason = state["last_sufficiency_reason"]
     dimension = Dimension(state["current_dimension"])
-    question = f"Could you say more? Specifically: {reason}"
-    logger.info("graph.ask_followup", dimension=dimension.value)
+    logger.info(
+        "graph.ask_followup", dimension=dimension.value, reason=state["last_sufficiency_reason"]
+    )
     return {
-        "pending_question": question,
+        "pending_question": FOLLOWUP_QUESTION,
         "followups_used": state["followups_used"] + 1,
         "total_followups_used": state["total_followups_used"] + 1,
         "turn": state["turn"] + 1,

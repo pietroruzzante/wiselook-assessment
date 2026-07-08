@@ -29,7 +29,26 @@ async def test_ask_followup_increments_both_followup_counters() -> None:
     assert updates["followups_used"] == 1
     assert updates["total_followups_used"] == 2
     assert updates["turn"] == 3
-    assert "too vague" in updates["pending_question"]
+
+
+async def test_ask_followup_never_leaks_the_sufficiency_reason_to_the_user() -> None:
+    """assess_sufficiency's `reason` names the trait and the model's read
+    on the answer (e.g. "could reflect either genuine curiosity (high
+    openness)...") — if that ever ends up in pending_question, the
+    assessment stops being blind and a user could game later answers."""
+    state = cast(
+        AssessmentState,
+        {
+            "last_sufficiency_reason": "could reflect either genuine curiosity (high openness) or impulsive enthusiasm",
+            "current_dimension": "openness",
+            "followups_used": 0,
+            "total_followups_used": 0,
+            "turn": 1,
+        },
+    )
+    updates = await ask_followup(state)
+    assert "openness" not in updates["pending_question"].lower()
+    assert "curiosity" not in updates["pending_question"].lower()
 
 
 async def test_finalize_confidence_drops_with_more_followups_used(monkeypatch: pytest.MonkeyPatch) -> None:
