@@ -12,6 +12,7 @@ import os
 os.environ.setdefault("ANTHROPIC_API_KEY", "test-key")
 
 from collections.abc import AsyncIterator
+from pathlib import Path
 from typing import TypeVar, cast
 
 import pytest
@@ -19,12 +20,23 @@ from httpx import ASGITransport, AsyncClient
 from pydantic import BaseModel
 
 import app.graph.nodes as nodes_module
+import app.observability.logging as logging_module
 from app.api.dependencies import get_graph
 from app.domain.models import DimensionScore, SufficiencyVerdict
 from app.graph.builder import build_graph
 from app.main import app
 
 T = TypeVar("T", bound=BaseModel)
+
+
+@pytest.fixture(autouse=True)
+def _isolate_session_logs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The request middleware writes real per-session log files as a side
+    effect of serving a request (see app/observability/logging.py) — the
+    API tests below go through that same middleware, so without this
+    they'd litter the repo's logs/sessions/ with test-run files instead
+    of real chat sessions."""
+    monkeypatch.setattr(logging_module, "SESSION_LOG_DIR", tmp_path / "logs" / "sessions")
 
 
 class FakeLLMClient:
