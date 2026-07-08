@@ -303,57 +303,131 @@
 
     .profile-panel { display: none; margin: 0 1.5rem 1rem; }
     .profile-panel.visible { display: block; }
+
+    /* ── Start screen ── */
+    .start-view {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .start-card {
+      max-width: 380px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+    .start-logo {
+      width: 48px;
+      height: 48px;
+      background: var(--blue);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 4px;
+    }
+    .start-logo svg { width: 26px; height: 26px; }
+    .start-title { font-size: 20px; font-weight: 500; color: var(--text-primary); }
+    .start-sub { font-size: 14px; color: var(--text-secondary); line-height: 1.55; }
+    .start-btn {
+      margin-top: 10px;
+      padding: 0.7rem 1.7rem;
+      border-radius: var(--radius);
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .start-btn:hover { background: var(--blue-dark); }
+    .start-btn:active { transform: scale(0.97); }
+
+    /* ── Chat view ── */
+    .chat-view {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .chat-view.visible { display: flex; }
   </style>
 </head>
 <body>
 
-  <!-- Header -->
-  <header class="header">
-    <div class="header-logo">
-      <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="9" cy="9" r="6" stroke="white" stroke-width="1.6"/>
-        <path d="M6 9.5L8.2 11.5L12 7" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </div>
-    <div class="header-info">
-      <div class="header-title">Wiselook Assessment</div>
-      <div class="header-sub">Big Five personality evaluation</div>
-    </div>
-    <div class="header-badge" id="status-badge">In progress</div>
-  </header>
-
-  <!-- Progress -->
-  <div class="progress-bar">
-    <span class="progress-label" id="progress-label">Question 1 of 5</span>
-    <div class="progress-track">
-      <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
-    </div>
-    <div class="progress-dots" id="progress-dots"></div>
-  </div>
-
-  <!-- Messages -->
-  <main class="messages" id="messages"></main>
-
-  <!-- Completed banner -->
-  <div class="completed-banner" id="completed-banner">
-    Assessment complete — profile saved. The service would now return a structured JSON profile.
-  </div>
-
-  <!-- Final profile card (populated only on completion) -->
-  <div class="profile-panel" id="profile-panel"></div>
-
-  <!-- Input -->
-  <div class="input-area" id="input-area">
-    <div class="input-wrap">
-      <textarea id="input" rows="1" placeholder="Type your answer…"></textarea>
-      <button class="send-btn" id="send-btn" aria-label="Send message">
-        <svg viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M7.5 2.5V12M7.5 2.5L3.5 6.5M7.5 2.5L11.5 6.5"
-                stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Start screen -->
+  <div class="start-view" id="start-view">
+    <div class="start-card">
+      <div class="start-logo">
+        <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="9" cy="9" r="6" stroke="white" stroke-width="1.6"/>
+          <path d="M6 9.5L8.2 11.5L12 7" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-      </button>
+      </div>
+      <div class="start-title">Wiselook Assessment</div>
+      <p class="start-sub">A short conversation to infer your Big Five personality profile — five questions, a couple of minutes.</p>
+      <button class="start-btn" id="start-btn">Start Assessment</button>
     </div>
-    <div class="input-hint">Enter to send · Shift+Enter for new line</div>
+  </div>
+
+  <!-- Chat view -->
+  <div class="chat-view" id="chat-view">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-logo">
+        <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="9" cy="9" r="6" stroke="white" stroke-width="1.6"/>
+          <path d="M6 9.5L8.2 11.5L12 7" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="header-info">
+        <div class="header-title">Wiselook Assessment</div>
+        <div class="header-sub">Big Five personality evaluation</div>
+      </div>
+      <div class="header-badge" id="status-badge">In progress</div>
+    </header>
+
+    <!-- Progress -->
+    <div class="progress-bar">
+      <span class="progress-label" id="progress-label">Question 1 of 5</span>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+      </div>
+      <div class="progress-dots" id="progress-dots"></div>
+    </div>
+
+    <!-- Messages -->
+    <main class="messages" id="messages"></main>
+
+    <!-- Completed banner -->
+    <div class="completed-banner" id="completed-banner">
+      Assessment complete
+    </div>
+
+    <!-- Final profile card (populated only on completion) -->
+    <div class="profile-panel" id="profile-panel"></div>
+
+    <!-- Input -->
+    <div class="input-area" id="input-area">
+      <div class="input-wrap">
+        <textarea id="input" rows="1" placeholder="Type your answer…"></textarea>
+        <button class="send-btn" id="send-btn" aria-label="Send message">
+          <svg viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7.5 2.5V12M7.5 2.5L3.5 6.5M7.5 2.5L11.5 6.5"
+                  stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="input-hint">Enter to send · Shift+Enter for new line</div>
+    </div>
+
   </div>
 
 <script>
@@ -562,7 +636,14 @@
 
   // Init
   updateProgress();
-  startSession();
+
+  const startView = document.getElementById('start-view');
+  const chatView = document.getElementById('chat-view');
+  document.getElementById('start-btn').addEventListener('click', () => {
+    startView.style.display = 'none';
+    chatView.classList.add('visible');
+    startSession();
+  });
 </script>
 </body>
 </html>
