@@ -14,9 +14,10 @@ from typing import Any, TypeVar
 
 import structlog
 from anthropic import (
-    AsyncAnthropic,
     APIConnectionError,
+    APIError,
     APITimeoutError,
+    AsyncAnthropic,
     InternalServerError,
     RateLimitError,
 )
@@ -36,9 +37,20 @@ T = TypeVar("T", bound=BaseModel)
 _TRANSIENT_ERRORS = (APIConnectionError, APITimeoutError, RateLimitError, InternalServerError)
 
 
-class LLMOutputError(Exception):
+class LLMError(Exception):
+    """Base for typed LLM failures — callers (the API layer) catch this
+    once and turn it into a clean HTTP error instead of a raw traceback."""
+
+
+class LLMOutputError(LLMError):
     """Raised when the model's output still fails schema validation after
     one repair attempt."""
+
+
+class LLMRequestError(LLMError):
+    """Raised when the Anthropic API itself rejects the request — auth,
+    billing, invalid request, or a transient error that exhausted retries.
+    Not a parsing problem, so no repair attempt applies."""
 
 
 class AnthropicStructuredClient:
@@ -68,7 +80,15 @@ class AnthropicStructuredClient:
         user-facing error rather than crashing the graph.
         """
         async with self._semaphore:
-            raw = await self._call_with_retries(system, user, output_model, temperature, max_tokens)
+            try:
+                raw = await self._call_with_retries(system, user, output_model, temperature, max_tokens)
+            except APIError as exc:
+                logger.error(
+                    "llm.request_failed",
+                    output_model=output_model.__name__,
+                    error=str(exc),
+                )
+                raise LLMRequestError(f"Anthropic API request failed: {exc}") from exc
 
         try:
             return output_model.model_validate(raw)
@@ -136,7 +156,17 @@ class AnthropicStructuredClient:
             f"Call the `{output_model.__name__}` tool again, with arguments that "
             f"strictly match its schema."
         )
-        raw = await self._call_with_retries(system, stricter_user, output_model, temperature, max_tokens)
+        try:
+            raw = await self._call_with_retries(system, stricter_user, output_model, temperature, max_tokens)
+        except APIError as exc:
+            logger.error(
+                "llm.request_failed",
+                output_model=output_model.__name__,
+                error=str(exc),
+                phase="repair",
+            )
+            raise LLMRequestError(f"Anthropic API request failed during repair: {exc}") from exc
+
         try:
             return output_model.model_validate(raw)
         except ValidationError as exc2:

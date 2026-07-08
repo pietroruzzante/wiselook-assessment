@@ -28,31 +28,48 @@ DIMENSION_ORDER: list[Dimension] = [
     Dimension.NEUROTICISM,
 ]
 
-# Grounded in day-to-day work scenarios so the answer draws on lived
-# experience rather than abstract self-description.
+# Situational-judgment style: each question narrates a concrete, third-person
+# workplace scenario (what a colleague/manager did or said, what happened as
+# a result) and then asks how the person would react. The scenario itself
+# supplies the specificity, so a generic reply ("I'd handle it professionally")
+# stands out clearly as insufficient against a concrete prompt.
 PRIMARY_QUESTIONS: dict[Dimension, str] = {
     Dimension.OPENNESS: (
-        "Tell me about a time your team was asked to try a new tool, process, "
-        "or approach that replaced something familiar. How did you react, and "
-        "what did you do?"
+        "One of your colleagues just came back from a conference and told the "
+        "team about a completely different project-management methodology "
+        "she wants to trial — it would mean dropping the workflow you've all "
+        "used for two years, with no guarantee it's actually better. She's "
+        "already posted in the team channel asking who wants to pilot it "
+        "starting Monday. How would you react, and what would you do?"
     ),
     Dimension.CONSCIENTIOUSNESS: (
-        "Walk me through how you handled a project with a hard deadline and "
-        "several moving parts. How did you plan the work and keep it on track?"
+        "A teammate just went on unexpected leave for two weeks, right in the "
+        "middle of a project with a hard client deadline next Friday. Their "
+        "work — three tasks the rest of the project depends on — now has to "
+        "be picked up by the remaining team, with no extra time added to the "
+        "schedule. How would you handle the situation?"
     ),
     Dimension.EXTRAVERSION: (
-        "Describe a typical week at work in terms of meetings, team "
-        "interactions, and heads-down solo work. Which parts energize you and "
-        "which drain you?"
+        "Your manager just announced that starting next quarter, most "
+        "cross-team coordination will move from written updates to daily "
+        "stand-up calls and more frequent in-person syncs, on top of your "
+        "existing meeting load. A few colleagues have already pushed back, "
+        "saying it will eat into their focus time. How would you react to "
+        "this change, and how would it affect the way you work?"
     ),
     Dimension.AGREEABLENESS: (
-        "Tell me about a time you disagreed with a colleague or manager on how "
-        "something should be done. How did you handle the disagreement?"
+        "In a meeting about a shared project, a colleague pushes back hard on "
+        "your proposed approach in front of the rest of the team, argues for a "
+        "completely different direction, and dismisses your reasoning as "
+        "overly cautious. A decision has to be made by the end of the "
+        "meeting. How would you respond in the room, and afterward?"
     ),
     Dimension.NEUROTICISM: (
-        "Think of a time something went wrong at work unexpectedly, like a "
-        "production incident, a missed deadline, or critical feedback. How did "
-        "you react in the moment and afterward?"
+        "You just found out that a colleague's mistake caused a bug to reach "
+        "production, and it's now affecting several customers. Your manager "
+        "messages you and the colleague asking for an explanation and a fix, "
+        "right in the middle of your own deadline crunch. How would you react "
+        "in that moment, and how would you handle the hours that follow?"
     ),
 }
 

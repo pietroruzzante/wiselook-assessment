@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import router
-from app.llm.client import LLMOutputError
+from app.llm.client import LLMError
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 
@@ -24,6 +24,6 @@ async def index() -> FileResponse:
     return FileResponse(STATIC_DIR / "index.html")
 
 
-@app.exception_handler(LLMOutputError)
-async def llm_output_error_handler(request: Request, exc: LLMOutputError) -> JSONResponse:
+@app.exception_handler(LLMError)
+async def llm_error_handler(request: Request, exc: LLMError) -> JSONResponse:
     return JSONResponse(status_code=502, content={"detail": str(exc)})

@@ -300,6 +300,9 @@
       text-align: center;
     }
     .completed-banner.visible { display: block; }
+
+    .profile-panel { display: none; margin: 0 1.5rem 1rem; }
+    .profile-panel.visible { display: block; }
   </style>
 </head>
 <body>
@@ -336,6 +339,9 @@
     Assessment complete — profile saved. The service would now return a structured JSON profile.
   </div>
 
+  <!-- Final profile card (populated only on completion) -->
+  <div class="profile-panel" id="profile-panel"></div>
+
   <!-- Input -->
   <div class="input-area" id="input-area">
     <div class="input-wrap">
@@ -351,35 +357,18 @@
   </div>
 
 <script>
-  const TOTAL = 5;
+  const DIMENSIONS = ['openness', 'conscientiousness', 'extraversion', 'agreeableness', 'neuroticism'];
+  const DIM_LABELS = {
+    openness: 'Openness',
+    conscientiousness: 'Conscientiousness',
+    extraversion: 'Extraversion',
+    agreeableness: 'Agreeableness',
+    neuroticism: 'Neuroticism',
+  };
+  const TOTAL = DIMENSIONS.length;
 
-  const QUESTIONS = [
-    "Think about the last time you had to solve a genuinely difficult problem at work. How did you go about it — did you prefer to figure it out on your own, or did you seek input from others early on?",
-    "When you're working on a project with a clear deadline, how do you typically manage your time and priorities?",
-    "Describe a recent situation where you disagreed with a colleague's approach. How did you handle it?",
-    "How do you usually react when you're given a task that's outside your current area of expertise?",
-    "Think of a moment when things didn't go as planned. How did you respond, and what did you take from it?"
-  ];
-
-  const FOLLOWUPS = [
-    "Interesting. When you do bring others in, are you more comfortable leading that conversation or listening first?",
-    "And when something unexpected comes up that disrupts your plan, what's your usual first move?",
-    "Did you feel that conversation changed the outcome, or did you mostly end up going with your original approach?",
-    "What's the first thing you do when you realise you're out of your depth?",
-    "Looking back, is there anything you'd do differently?"
-  ];
-
-  const PROFILES = [
-    { o: 0, c: 0, e: 0, a: 0, n: 0 },
-    { o: 3.5, c: 4.0, e: 2.0, a: 3.8, n: 1.5 },
-    { o: 3.5, c: 4.2, e: 2.2, a: 3.8, n: 1.4 },
-    { o: 3.8, c: 4.2, e: 2.0, a: 4.0, n: 1.3 },
-    { o: 3.8, c: 4.3, e: 2.2, a: 4.2, n: 1.2 },
-    { o: 4.0, c: 4.3, e: 2.0, a: 4.2, n: 1.0 }
-  ];
-
+  let sessionId = null;
   let step = 0;
-  let awaitingFollowup = false;
   let done = false;
 
   const messagesEl = document.getElementById('messages');
@@ -411,7 +400,6 @@
   }
 
   function addMessage(role, html) {
-    const initials = role === 'ai' ? 'W' : 'You';
     const msg = document.createElement('div');
     msg.className = 'msg msg-' + role;
     msg.innerHTML = `
@@ -442,23 +430,22 @@
     return msg;
   }
 
-  function profileCardHTML(p) {
-    if (p.o === 0) return '';
-    const rows = [
-      { label: 'Openness',          val: p.o, cls: 'fill-o' },
-      { label: 'Conscientiousness', val: p.c, cls: 'fill-c' },
-      { label: 'Extraversion',      val: p.e, cls: 'fill-e' },
-      { label: 'Agreeableness',     val: p.a, cls: 'fill-a' },
-      { label: 'Neuroticism',       val: p.n, cls: 'fill-n' },
-    ];
+  function profileCardHTML(profile) {
+    if (!profile) return '';
+    const rows = DIMENSIONS.filter(d => profile[d]).map(d => ({
+      label: DIM_LABELS[d],
+      val: profile[d].score,
+      cls: 'fill-' + d[0],
+    }));
+    if (!rows.length) return '';
     return `
       <div class="profile-card">
-        <div class="profile-title">Profile so far</div>
+        <div class="profile-title">Your Big Five Profile</div>
         ${rows.map(r => `
           <div class="profile-row">
             <span class="profile-dim">${r.label}</span>
             <div class="profile-track">
-              <div class="profile-fill ${r.cls}" style="width:${(r.val/5)*100}%"></div>
+              <div class="profile-fill ${r.cls}" style="width:${(r.val / 5) * 100}%"></div>
             </div>
             <span class="profile-score">${r.val.toFixed(1)}</span>
           </div>
@@ -467,72 +454,100 @@
     `;
   }
 
-  function introHTML() {
-    return `
-      Hi! I'm Claire, Wiselook's assessment assistant. I'll ask you a few questions about how you typically work and think. There are no right or wrong answers — just respond naturally.<br><br>Ready? Let's start.
-      <div class="dim-tags">
-        <span class="dim-tag tag-o">Openness</span>
-        <span class="dim-tag tag-c">Conscientiousness</span>
-        <span class="dim-tag tag-e">Extraversion</span>
-        <span class="dim-tag tag-a">Agreeableness</span>
-        <span class="dim-tag tag-n">Neuroticism</span>
-      </div>
-    `;
+  function errorHTML(message) {
+    return `<span style="color:#b3261e">${message}</span>`;
   }
 
   function aiReply(html, delay = 1200) {
     inputEl.disabled = true;
     sendBtn.disabled = true;
     const typing = addTyping();
-    setTimeout(() => {
-      typing.remove();
-      addMessage('ai', html);
-      inputEl.disabled = false;
-      sendBtn.disabled = false;
-      inputEl.focus();
-    }, delay);
+    return new Promise(resolve => {
+      setTimeout(() => {
+        typing.remove();
+        addMessage('ai', html);
+        inputEl.disabled = false;
+        sendBtn.disabled = false;
+        inputEl.focus();
+        resolve();
+      }, delay);
+    });
   }
 
-  function handleSend() {
-    if (done) return;
+  async function startSession() {
+    try {
+      const res = await fetch('/v1/sessions', { method: 'POST' });
+      if (!res.ok) throw new Error('status ' + res.status);
+      const data = await res.json();
+      sessionId = data.session_id;
+      step = DIMENSIONS.indexOf(data.current_dimension);
+      updateProgress();
+      await aiReply(data.message, 400);
+    } catch (err) {
+      await aiReply(errorHTML('Could not start the assessment (' + err.message + '). Is the server running with a valid ANTHROPIC_API_KEY?'), 200);
+    }
+  }
+
+  async function handleSend() {
+    if (done || !sessionId) return;
     const text = inputEl.value.trim();
     if (!text) return;
     addMessage('user', text);
     inputEl.value = '';
     inputEl.style.height = 'auto';
 
-    if (!awaitingFollowup) {
-      awaitingFollowup = true;
-      aiReply(FOLLOWUPS[step]);
-    } else {
-      awaitingFollowup = false;
-      step++;
-      updateProgress();
+    inputEl.disabled = true;
+    sendBtn.disabled = true;
+    const typing = addTyping();
 
-      if (step >= TOTAL) {
-        done = true;
-        const p = PROFILES[TOTAL];
-        aiReply(`
-          That's the last question. Here's your complete Big Five profile:
-          ${profileCardHTML(p)}
-          <br>In the real service, this would be returned as a validated JSON object with scores, rationale, confidence, and metadata.
-        `, 1500);
-        setTimeout(() => {
-          statusBadge.textContent = 'Complete';
-          statusBadge.style.background = '#eaf3de';
-          statusBadge.style.color = '#3b6d11';
-          statusBadge.style.borderColor = '#c0dd97';
-          completedBanner.classList.add('visible');
-          inputArea.style.display = 'none';
-          progressFill.style.width = '100%';
-          progressLabel.textContent = 'Complete';
-          renderDots();
-        }, 2800);
-      } else {
-        const p = PROFILES[step];
-        const card = profileCardHTML(p);
-        aiReply(QUESTIONS[step] + (card ? '<br>' + card : ''));
-      }
+    let res;
+    try {
+      res = await fetch(`/v1/sessions/${sessionId}/reply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answer: text }),
+      });
+    } catch (err) {
+      typing.remove();
+      addMessage('ai', errorHTML('Network error: ' + err.message));
+      inputEl.disabled = false;
+      sendBtn.disabled = false;
+      return;
+    }
+
+    typing.remove();
+
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      addMessage('ai', errorHTML(errBody.detail || `Something went wrong (${res.status}).`));
+      inputEl.disabled = false;
+      sendBtn.disabled = false;
+      return;
+    }
+
+    const data = await res.json();
+
+    if (data.status === 'completed') {
+      done = true;
+      step = TOTAL;
+      updateProgress();
+      addMessage('ai', `That's the last question — thanks for taking the time. Your complete Big Five profile is below (confidence: ${Math.round(data.confidence * 100)}%).`);
+      const profilePanel = document.getElementById('profile-panel');
+      profilePanel.innerHTML = profileCardHTML(data.profile);
+      profilePanel.classList.add('visible');
+      statusBadge.textContent = 'Complete';
+      statusBadge.style.background = '#eaf3de';
+      statusBadge.style.color = '#3b6d11';
+      statusBadge.style.borderColor = '#c0dd97';
+      completedBanner.classList.add('visible');
+      inputArea.style.display = 'none';
+    } else {
+      step = DIMENSIONS.indexOf(data.current_dimension);
+      updateProgress();
+      addMessage('ai', data.message);
+      inputEl.disabled = false;
+      sendBtn.disabled = false;
+      inputEl.focus();
     }
   }
 
@@ -547,8 +562,7 @@
 
   // Init
   updateProgress();
-  aiReply(introHTML(), 400);
-  setTimeout(() => aiReply(QUESTIONS[0]), 1200);
+  startSession();
 </script>
 </body>
 </html>
